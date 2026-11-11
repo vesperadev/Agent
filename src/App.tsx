@@ -24,9 +24,27 @@ function App() {
     ]);
   }
 
+  // 新会话：清空当前消息与输入框，回到空白起点。
+  // 当前是单会话模型；后端 chat 命令无状态，无需通知后端。
+  function newChat() {
+    setMessages([]);
+    setInput("");
+  }
+
   return (
     <main className="container">
-      <h1>Mini_Agent</h1>
+      <header
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
+        <h1>Mini_Agent</h1>
+        <button type="button" onClick={newChat}>
+          新会话
+        </button>
+      </header>
 
       <div className="messages">
         {messages.map((m, i) => (
