@@ -1,49 +1,63 @@
 import { useState } from "react";
-import reactLogo from "./assets/react.svg";
 import { invoke } from "@tauri-apps/api/core";
 import "./App.css";
 
-function App() {
-  const [greetMsg, setGreetMsg] = useState("");
-  const [name, setName] = useState("");
+interface Msg {
+  role: "user" | "agent";
+  text: string;
+}
 
-  async function greet() {
-    // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-    setGreetMsg(await invoke("greet", { name }));
+function App() {
+  const [messages, setMessages] = useState<Msg[]>([]);
+  const [input, setInput] = useState("");
+
+  async function send() {
+    const text = input.trim();
+    if (!text) return;
+    setInput("");
+    // 参数名 `message` 必须与 Rust 命令 `fn chat(message: String)` 完全一致。
+    const reply = await invoke<string>("chat", { message: text });
+    setMessages((m) => [
+      ...m,
+      { role: "user", text },
+      { role: "agent", text: reply },
+    ]);
   }
 
   return (
     <main className="container">
-      <h1>Welcome to Mini_Agent</h1>
+      <h1>Mini_Agent</h1>
 
-      <div className="row">
-        <a href="https://vite.dev" target="_blank">
-          <img src="/vite.svg" className="logo vite" alt="Vite logo" />
-        </a>
-        <a href="https://tauri.app" target="_blank">
-          <img src="/tauri.svg" className="logo tauri" alt="Tauri logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
+      <div className="messages">
+        {messages.map((m, i) => (
+          <p key={i} className={m.role}>
+            <strong>{m.role === "user" ? "你" : "Agent"}：</strong>
+            {m.text}
+          </p>
+        ))}
       </div>
-      <p>Click on the Tauri, Vite, and React logos to learn more.</p>
 
       <form
         className="row"
         onSubmit={(e) => {
           e.preventDefault();
-          greet();
+          send();
         }}
       >
         <input
-          id="greet-input"
-          onChange={(e) => setName(e.currentTarget.value)}
-          placeholder="Enter a name..."
+          autoFocus
+          value={input}
+          onChange={(e) => setInput(e.currentTarget.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              send();
+            }
+          }}
+          placeholder="输入消息，回车发送..."
         />
-        <button type="submit">Greet</button>
+        <button type="submit">发送</button>
       </form>
-      <p>{greetMsg}</p>
     </main>
   );
 }
